@@ -1,6 +1,7 @@
 (ns dcs.core
   (:gen-class)
   (:require [clojure.spec.alpha :as s]
+            [dcs.contract-template :as ct]
             [orchestra.spec.test :as st]))
 
 (defonce last-id (atom 0))
@@ -9,6 +10,11 @@
   (swap! last-id inc))
 
 (s/def ::id int?)
+
+;; *****************************************************************************
+;; * DEVILS *
+;; *****************************************************************************
+
 (s/def ::name string?)
 
 (s/def ::devil (s/keys :req [::id ::name]))
