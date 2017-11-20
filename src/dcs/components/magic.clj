@@ -1,24 +1,7 @@
 (ns dcs.components.magic
   (:require [brute.entity :as e]
-            [clojure.spec.alpha :as s]))
-
-(def domain #{:wood :fire :earth :metal :water})
-(def aptitude #{0.5 0.75 1.0 1.5 2})
-
-(s/def ::domain domain)
-(s/def ::aptitude aptitude)
-(s/def ::xp int?)
-(s/def ::proficiency (s/keys :req [::domain ::xp ::aptitude]))
-
-(s/def ::proficiencies (s/coll-of ::proficiency))
-
-(s/fdef ->Magic
-  :args (s/cat :proficiencies ::proficiencies))
-
-(defrecord Magic [proficiencies])
-
-(defn create [proficiencies]
-  (->Magic proficiencies))
+            [clojure.spec.alpha :as s]
+            [dcs.random :as r]))
 
 ;; Probably belongs somewhere else. Uses D&D levels. Formula is: XP-for-level =
 ;; L*(L-1)*500
@@ -57,3 +40,37 @@
 
 (defn xp-for-level [level]
   (level->xp-chart level))
+
+;; *****************************************************************************
+;; * MAGIC COMPONENT *
+;; *****************************************************************************
+
+(def domain #{:wood :fire :earth :metal :water})
+(def aptitude #{0.5 0.75 1.0 1.5 2})
+
+(s/def ::domain domain)
+(s/def ::aptitude aptitude)
+(s/def ::xp int?)
+(s/def ::proficiency (s/keys :req [::domain ::xp ::aptitude]))
+
+(s/def ::proficiencies (s/coll-of ::proficiency))
+
+(s/fdef ->Magic
+  :args (s/cat :proficiencies ::proficiencies))
+
+(defrecord Magic [proficiencies])
+
+(defn create [proficiencies]
+  (->Magic proficiencies))
+
+(defn- create-proficiency [^java.util.Random rng max-level domain]
+  {::domain domain
+   ::aptitude (first (r/seeded-shuffle rng aptitude))
+   ::xp (r/seeded-next-int rng (xp-for-level max-level))})
+
+(defn create-rand-magic
+  [^java.util.Random rng max-domains max-level]
+  (->> (r/seeded-shuffle rng domain)
+       (take (inc (r/seeded-next-int rng max-domains)))
+       (map (partial create-proficiency rng max-level))
+       create))
