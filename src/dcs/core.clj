@@ -6,6 +6,9 @@
             [dcs.components.inventory :as inventory]
             [dcs.components.capacity :as capacity]
             [dcs.components.magic :as magic]
+            [dcs.components.devil :as devil]
+            [dcs.components.human :as human]
+            [dcs.components.voidborn :as voidborn]
             [dcs.random :as r]
             [orchestra.spec.test :as st]))
 
@@ -13,6 +16,7 @@
   (let [summoner (e/create-entity)]
     (-> system
         (e/add-entity summoner)
+        (e/add-component summoner (human/create))
         (e/add-component summoner (inventory/create [] 10))
         (e/add-component summoner (capacity/create []))
         (e/add-component summoner (magic/create-rand-magic rng 2 3)))))
@@ -21,6 +25,8 @@
   (let [devil (e/create-entity)]
     (-> system
         (e/add-entity devil)
+        (e/add-component devil (devil/create))
+        (e/add-component devil (voidborn/create))
         (e/add-component devil (inventory/create [] 50))
         (e/add-component devil (capacity/create []))
         (e/add-component devil (magic/create [])))))
