@@ -1,4 +1,4 @@
-(ns dcs.components.magic
+(ns dcs.components.has-magic
   (:require [brute.entity :as e]
             [clojure.spec.alpha :as s]
             [dcs.random :as r]))
@@ -42,7 +42,7 @@
   (level->xp-chart level))
 
 ;; *****************************************************************************
-;; * MAGIC COMPONENT *
+;; * HAS MAGIC COMPONENT *
 ;; *****************************************************************************
 
 (def domain #{:wood :fire :earth :metal :water})
@@ -55,20 +55,20 @@
 
 (s/def ::proficiencies (s/coll-of ::proficiency))
 
-(s/fdef ->Magic
+(s/fdef ->HasMagic
   :args (s/cat :proficiencies ::proficiencies))
 
-(defrecord Magic [proficiencies])
+(defrecord HasMagic [proficiencies])
 
 (defn create [proficiencies]
-  (->Magic proficiencies))
+  (->HasMagic proficiencies))
 
 (defn- create-proficiency [^java.util.Random rng max-level domain]
   {::domain domain
    ::aptitude (first (r/seeded-shuffle rng aptitude))
    ::xp (r/seeded-next-int rng (xp-for-level max-level))})
 
-(defn create-rand-magic
+(defn create-rand-has-magic
   [^java.util.Random rng max-domains max-level]
   (->> (r/seeded-shuffle rng domain)
        (take (inc (r/seeded-next-int rng max-domains)))

@@ -3,12 +3,12 @@
   (:require [brute.entity :as e]
             [clojure.spec.alpha :as s]
             [dcs.contract-template :as ct]
-            [dcs.components.inventory :as inventory]
-            [dcs.components.capacity :as capacity]
-            [dcs.components.magic :as magic]
-            [dcs.components.devil :as devil]
-            [dcs.components.human :as human]
-            [dcs.components.voidborn :as voidborn]
+            [dcs.components.has-inventory :as has-inventory]
+            [dcs.components.has-capacity :as has-capacity]
+            [dcs.components.has-magic :as has-magic]
+            [dcs.components.is-devil :as is-devil]
+            [dcs.components.is-human :as is-human]
+            [dcs.components.is-voidborn :as is-voidborn]
             [dcs.random :as r]
             [orchestra.spec.test :as st]))
 
@@ -16,20 +16,20 @@
   (let [summoner (e/create-entity)]
     (-> system
         (e/add-entity summoner)
-        (e/add-component summoner (human/create))
-        (e/add-component summoner (inventory/create [] 10))
-        (e/add-component summoner (capacity/create []))
-        (e/add-component summoner (magic/create-rand-magic rng 2 3)))))
+        (e/add-component summoner (is-human/create))
+        (e/add-component summoner (has-inventory/create [] 10))
+        (e/add-component summoner (has-capacity/create []))
+        (e/add-component summoner (has-magic/create-rand-has-magic rng 2 3)))))
 
 (defn- generate-devil [system]
   (let [devil (e/create-entity)]
     (-> system
         (e/add-entity devil)
-        (e/add-component devil (devil/create))
-        (e/add-component devil (voidborn/create))
-        (e/add-component devil (inventory/create [] 50))
-        (e/add-component devil (capacity/create []))
-        (e/add-component devil (magic/create [])))))
+        (e/add-component devil (is-devil/create))
+        (e/add-component devil (is-voidborn/create))
+        (e/add-component devil (has-inventory/create [] 50))
+        (e/add-component devil (has-capacity/create []))
+        (e/add-component devil (has-magic/create [])))))
 
 (defn- seed-world [system]
   (reduce (fn [system _] (generate-devil system))
