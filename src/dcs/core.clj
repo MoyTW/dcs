@@ -3,12 +3,12 @@
   (:require [brute.entity :as e]
             [clojure.spec.alpha :as s]
             [dcs.contract-template :as ct]
-            [dcs.components.has-inventory :as has-inventory]
-            [dcs.components.has-capacity :as has-capacity]
-            [dcs.components.has-magic :as has-magic]
-            [dcs.components.is-devil :as is-devil]
-            [dcs.components.is-human :as is-human]
-            [dcs.components.is-voidborn :as is-voidborn]
+            [dcs.components.actor.has-inventory :as has-inventory]
+            [dcs.components.actor.has-capacity :as has-capacity]
+            [dcs.components.actor.has-magic :as has-magic]
+            [dcs.components.actor.is-devil :as is-devil]
+            [dcs.components.actor.is-human :as is-human]
+            [dcs.components.actor.is-voidborn :as is-voidborn]
             [dcs.random :as r]
             [orchestra.spec.test :as st]))
 

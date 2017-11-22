@@ -1,4 +1,4 @@
-(ns dcs.components.is-devil)
+(ns dcs.components.actor.is-devil)
 
 (defrecord IsDevil [])
 

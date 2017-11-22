@@ -1,4 +1,4 @@
-(ns dcs.components.has-inventory
+(ns dcs.components.actor.has-inventory
   (:require [brute.entity :as e]
             [clojure.spec.alpha :as s]))
 

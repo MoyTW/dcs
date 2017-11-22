@@ -1,4 +1,4 @@
-(ns dcs.components.is-human)
+(ns dcs.components.actor.is-human)
 
 (defrecord IsHuman [])
 

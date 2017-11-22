@@ -1,4 +1,4 @@
-(ns dcs.components.has-magic
+(ns dcs.components.actor.has-magic
   (:require [brute.entity :as e]
             [clojure.spec.alpha :as s]
             [dcs.random :as r]))

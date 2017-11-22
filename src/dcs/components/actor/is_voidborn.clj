@@ -1,4 +1,4 @@
-(ns dcs.components.is-voidborn)
+(ns dcs.components.actor.is-voidborn)
 
 (defrecord IsVoidborn [])
 

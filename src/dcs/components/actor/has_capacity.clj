@@ -1,4 +1,4 @@
-(ns dcs.components.has-capacity
+(ns dcs.components.actor.has-capacity
   (:require [brute.entity :as e]
             [clojure.spec.alpha :as s]))
 
