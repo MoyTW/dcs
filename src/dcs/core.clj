@@ -14,6 +14,7 @@
             [dcs.components.actor.is-voidborn :as is-voidborn]
             [dcs.components.location.is-location :as is-location]
             [dcs.components.location.is-void :as is-void]
+            [dcs.components.provides-action :as provides-action]
             [dcs.random :as r]
             [orchestra.spec.test :as st])
   ;; defrecords are implemented /w Java, so must use import
@@ -65,6 +66,21 @@
         (e/add-component devil (has-capacity/create []))
         (e/add-component devil (has-magic/create [])))))
 
+(defn- add-travel-action-provider
+  "Adds one-way travel link"
+  [system origin destination]
+  (let [travel-action (provides-action/create-travel-action system
+                                                            origin
+                                                            destination)
+        ;; Extremely ugly. Don't handle this here!
+        component (if-let [c (e/get-component system
+                                              origin
+                                              provides-action/record)]
+                    (update c :actions conj travel-action)
+                    (provides-action/create [travel-action]))]
+    (-> system
+        (e/add-component origin component))))
+
 (defn- build-locations [system rng]
   (let [void (e/create-entity)
         berlin (e/create-entity)
@@ -74,7 +90,11 @@
         (generate-town void "THE VOID (spoooooky)" (is-void/create))
         (generate-town berlin "Berlin")
         (generate-town london "London")
-        (generate-town moscow "Moscow"))))
+        (generate-town moscow "Moscow")
+        (add-travel-action-provider berlin london)
+        (add-travel-action-provider london berlin)
+        (add-travel-action-provider moscow berlin)
+        (add-travel-action-provider berlin moscow))))
 
 (defn- component-map [system entity]
   (->> (e/get-all-components-on-entity system entity)
