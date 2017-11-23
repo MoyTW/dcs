@@ -1,6 +1,7 @@
 (ns dcs.core
   (:gen-class)
   (:require [brute.entity :as e]
+            [brute.system :as bs]
             [clojure.spec.alpha :as s]
             [dcs.contract-template :as ct]
             [dcs.components.has-name :as has-name]
@@ -11,7 +12,10 @@
             [dcs.components.actor.is-human :as is-human]
             [dcs.components.actor.is-voidborn :as is-voidborn]
             [dcs.random :as r]
-            [orchestra.spec.test :as st]))
+            [orchestra.spec.test :as st])
+  ;; defrecords are implemented /w Java, so must use import
+  (:import [dcs.components.actor.is_devil IsDevil]
+           [dcs.components.actor.is_human IsHuman]))
 
 (def c (atom 0))
 
@@ -46,11 +50,39 @@
           (e/create-system)
           (take 10 (repeat 1))))
 
+;; We don't actually want to have different systems for summoners/devils; rather
+;; we want to group them under a "Actor" or "AI" Component. This is just for
+;; test purposes.
+(defn- summoners-system [system ticks]
+  (let [summoners (e/get-all-entities-with-component system IsHuman)]
+    (prn :SUMMONERS :ticks ticks)
+    (clojure.pprint/pprint summoners)
+    system))
+
+(defn- devils-system [system ticks]
+  (let [devils (e/get-all-entities-with-component system IsDevil)]
+    (prn :DEVILS :ticks ticks)
+    (clojure.pprint/pprint devils)
+    system))
+
+(defn- add-systems
+  "Add system functions to the system (that's...kinda confusing)"
+  [system]
+  (-> system
+      (bs/add-system-fn summoners-system)
+      (bs/add-system-fn devils-system)))
+
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
   (let [rng (r/create-rng 1)
-        sys (seed-world (e/create-system) rng)]
-    (clojure.pprint/pprint sys)))
+        sys (-> e/create-system
+                (seed-world rng)
+                add-systems)]
+    (-> sys
+        (bs/process-one-game-tick 10)
+        (bs/process-one-game-tick 1)
+        (bs/process-one-game-tick 25))
+    "end"))
 
 (st/instrument)
