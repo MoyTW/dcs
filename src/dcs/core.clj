@@ -70,10 +70,15 @@
   (-> system
       ;; void
       (generate-town (is-void/create) (has-name/create "THE VOID (spoooooky)"))
-      ;; some towns
+      ;; some rando towns
       (generate-town)
       (generate-town)
       (generate-town)))
+
+(defn- component-map [system entity]
+  (->> (e/get-all-components-on-entity system entity)
+       (map (fn [c] [(last (clojure.string/split (str (type c)) #"\.")) c]))
+       (into {})))
 
 (defn- seed-world [system rng]
   (let [new-system (-> (e/create-system)
@@ -84,24 +89,20 @@
                              generate-devil))
                        new-system
                        (take 10 (repeat 1)))]
+    (prn "World was seeded.")
+    (prn "Locations")
+    (clojure.pprint/pprint
+     (for [location (e/get-all-entities-with-component seeded IsLocation)]
+       (component-map seeded location)))
+    (prn "Humans")
     (clojure.pprint/pprint
      (for [human (e/get-all-entities-with-component seeded IsHuman)]
-       (name-and-location seeded human)))
+       (component-map seeded human)))
+    (prn "Devils")
     (clojure.pprint/pprint
      (for [devil (e/get-all-entities-with-component seeded IsDevil)]
-       (name-and-location seeded devil)))
+       (component-map seeded devil)))
     seeded))
-
-(defn- land-system [system ticks]
-  (let [l (e/get-all-entities-with-component system IsLocation)]
-    system))
-
-(defn- name-and-location [system entity]
-  (let [get-component #(e/get-component system %1 %2)]
-    [(get-component entity HasName)
-     (-> (get-component entity HasLocation)
-         :location
-         (get-component HasName))]))
 
 ;; We don't actually want to have different systems for summoners/devils; rather
 ;; we want to group them under a "Actor" or "AI" Component. This is just for
@@ -118,7 +119,6 @@
   "Add system functions to the system (that's...kinda confusing)"
   [system]
   (-> system
-      #_(bs/add-system-fn land-system)
       (bs/add-system-fn summoners-system)
       (bs/add-system-fn devils-system)))
 
