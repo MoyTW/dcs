@@ -29,14 +29,13 @@
 (defn- next-int [] (swap! c inc))
 
 (defn- generate-town
-  [system & components]
-  (let [town (e/create-entity)
-        system-with-new-town
+  [system new-entity town-name & components]
+  (let [system-with-new-town
         (-> system
-            (e/add-entity town)
-            (e/add-component town (has-name/create (str "town " (next-int))))
-            (e/add-component town (is-location/create)))]
-    (reduce #(e/add-component %1 town %2) system-with-new-town components)))
+            (e/add-entity new-entity)
+            (e/add-component new-entity (has-name/create town-name))
+            (e/add-component new-entity (is-location/create)))]
+    (reduce #(e/add-component %1 new-entity %2) system-with-new-town components)))
 
 (defn- generate-summoner [system rng]
   (let [void (first (e/get-all-entities-with-component system IsVoid))
@@ -67,13 +66,15 @@
         (e/add-component devil (has-magic/create [])))))
 
 (defn- build-locations [system rng]
-  (-> system
-      ;; void
-      (generate-town (is-void/create) (has-name/create "THE VOID (spoooooky)"))
-      ;; some rando towns
-      (generate-town)
-      (generate-town)
-      (generate-town)))
+  (let [void (e/create-entity)
+        berlin (e/create-entity)
+        london (e/create-entity)
+        moscow (e/create-entity)]
+    (-> system
+        (generate-town void "THE VOID (spoooooky)" (is-void/create))
+        (generate-town berlin "Berlin")
+        (generate-town london "London")
+        (generate-town moscow "Moscow"))))
 
 (defn- component-map [system entity]
   (->> (e/get-all-components-on-entity system entity)
@@ -88,7 +89,7 @@
                              (generate-summoner rng)
                              generate-devil))
                        new-system
-                       (take 10 (repeat 1)))]
+                       (take 2 (repeat 1)))]
     (prn "World was seeded.")
     (prn "Locations")
     (clojure.pprint/pprint

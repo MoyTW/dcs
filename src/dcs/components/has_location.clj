@@ -1,10 +1,7 @@
 (ns dcs.components.has-location
   (:require [brute.entity :as e]
-            [clojure.spec.alpha :as s])
-  (:import [dcs.components.location.is_location IsLocation]))
-
-(defn- location-entity-exists? [system location]
-  (e/get-component system location IsLocation))
+            [clojure.spec.alpha :as s]
+            [dcs.components.location.is-location :as is-location]))
 
 (defrecord HasLocation [location])
 
@@ -17,9 +14,10 @@
 ;;
 ;; Huh. Maybe I should search harder for alternatives?
 (s/fdef create
-  :args (s/cat :system map? :location identity)
+  ;; TODO: ::system and ::entity need to be things
+  :args (s/cat :system map? :location (fn [_] true))
   :fn (fn [{{:keys [system location]} :args}]
-        (location-entity-exists? system location)))
+        (is-location/location-entity-exists? system location)))
 
 (defn create [system location]
   (->HasLocation location))
