@@ -1,6 +1,7 @@
 (ns dcs.components.provides-action
   (:require [brute.entity :as e]
             [clojure.spec.alpha :as s]
+            [dcs.components.has-location :as has-location]
             [dcs.components.location.is-location :as is-location])
   (:import [dcs.components.has_name HasName]))
 
@@ -26,13 +27,8 @@
    ::origin origin
    ::destination destination})
 
-(defn travel-fn [system {:keys [origin destination]} entity]
-  (clojure.pprint/pprint
-   {:msg "ATTEMPTED TRAVEL"
-    :origin (e/get-component system origin HasName)
-    :destination (e/get-component system destination HasName)
-    :entity (e/get-component system entity HasName)})
-  system)
+(defn travel-fn [system {:keys [::origin ::destination]} entity]
+  (has-location/change-location system entity destination))
 
 ;; action stuff
 
@@ -59,7 +55,7 @@
 
 (defn create [actions] (->ProvidesAction actions))
 
-(defn execute-action [system {:keys [action-type] :as action} entity]
+(defn execute-action [system {:keys [::action-type] :as action} entity]
   (let [action-fn (action-type action-types->fns)]
     (action-fn system action entity)))
 

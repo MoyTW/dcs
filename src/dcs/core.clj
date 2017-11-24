@@ -3,6 +3,8 @@
   (:require [brute.entity :as e]
             [brute.system :as bs]
             [clojure.spec.alpha :as s]
+            [clojure.data :as data]
+            [clojure.walk :as walk]
             [dcs.contract-template :as ct]
             [dcs.components.has-name :as has-name]
             [dcs.components.has-location :as has-location]
@@ -129,8 +131,20 @@
 ;; we want to group them under a "Actor" or "AI" Component. This is just for
 ;; test purposes.
 (defn- summoners-system [system ticks]
-  (let [summoners (e/get-all-entities-with-component system IsHuman)]
-    system))
+  (let [summoners (e/get-all-entities-with-component system IsHuman)
+        get-component #(e/get-component system %1 %2)]
+    (reduce (fn [sys summoner]
+              (let [location-actions (-> (get-component summoner has-location/record)
+                                         :location
+                                         (get-component provides-action/record)
+                                         :actions)
+                    summoner-actions (-> (get-component summoner provides-action/record)
+                                         :actions)
+                    actions (concat location-actions summoner-actions)
+                    action (first actions)]
+                (provides-action/execute-action sys action summoner)))
+            system
+            summoners)))
 
 (defn- devils-system [system ticks]
   (let [devils (e/get-all-entities-with-component system IsDevil)]
@@ -143,6 +157,28 @@
       (bs/add-system-fn summoners-system)
       (bs/add-system-fn devils-system)))
 
+(defn- entity? [e]
+  (= (type e) java.util.UUID))
+
+(defn obj->name-if-uuid [sys o]
+  (mapv #(if (entity? %) (e/get-component sys % has-name/record) %) o))
+
+(defn uuids->names
+  "Recursively transforms all map UUID values to names"
+  [sys m]
+  (let [transform #(obj->name-if-uuid sys %)]
+    (walk/postwalk
+     (fn [obj]
+       (if (map? obj)
+         (into {} (map transform obj))
+         obj))
+     m)))
+
+(defn- advance [sys delta]
+  (let [next-sys (bs/process-one-game-tick sys delta)]
+    (clojure.pprint/pprint (uuids->names next-sys (take 2 (data/diff sys next-sys))))
+    next-sys))
+
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
@@ -151,9 +187,9 @@
                 (seed-world rng)
                 add-systems)]
     (-> sys
-        (bs/process-one-game-tick 10)
-        (bs/process-one-game-tick 1)
-        (bs/process-one-game-tick 25))
+        (advance 10)
+        (advance 1)
+        (advance 25))
     "end"))
 
 (st/instrument)

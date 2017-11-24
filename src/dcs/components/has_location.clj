@@ -5,6 +5,8 @@
 
 (defrecord HasLocation [location])
 
+(def record HasLocation)
+
 ;; I do not really like doing the data integrity checks on the system inside of
 ;; a function def here, but this is the only way I'm aware of to get that really
 ;; nice printout of "Hey I expected X but Y!".
@@ -21,3 +23,14 @@
 
 (defn create [system location]
   (->HasLocation location))
+
+(s/fdef change-location
+  :args (s/cat :system map?
+               :entity (fn [_] true)
+               :location (fn [_] true))
+  :fn (fn entity-has-existing-location? [{{:keys [system entity]} :args}]
+        (e/get-component system entity HasLocation)))
+(defn change-location
+  "Sets the entity's location to the new location."
+  [system entity location]
+  (e/add-component system entity (create system location)))

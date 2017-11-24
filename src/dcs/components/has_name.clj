@@ -8,5 +8,7 @@
 
 (defrecord HasName [name])
 
+(def record HasName)
+
 (defn create [name]
   (->HasName name))
