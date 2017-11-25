@@ -1,6 +1,7 @@
 (ns dcs.components.provides-action
   (:require [brute.entity :as e]
             [clojure.spec.alpha :as s]
+            [dcs.components.actor.has-magic :as has-magic]
             [dcs.components.has-location :as has-location]
             [dcs.components.location.is-location :as is-location])
   (:import [dcs.components.has_name HasName]))
@@ -29,6 +30,38 @@
 
 (defn travel-fn [system {:keys [::origin ::destination]} entity]
   (has-location/change-location system entity destination))
+
+;; train-proficiency action
+(s/def ::available-domains
+  (s/coll-of ::has-magic/domain :kind set? :min-count 1))
+(s/def ::min-xp int?)
+(s/def ::max-xp int?)
+(s/def ::train-proficiency-action
+  (s/and
+   ::action
+   (s/keys :req [::available-domains ::min-xp ::max-xp])))
+
+(s/fdef create-train-proficiency-action
+  :args (s/cat :available-domains ::available-domains
+               :min-xp ::min-xp
+               :max-xp ::max-xp)
+  :ret ::train-proficiency-action
+  :fn (fn [{{:keys [min-xp max-xp]} :ret}]
+        (<= min-xp max-xp)))
+(defn create-train-proficiency-action [available-domains min-xp max-xp]
+  {::action-type ::train-proficiency
+    ;; TODO: find out what you want 'value' to be baseline'd on
+   ::payoff {::intrinsic-value (int (/ (+ min-xp max-xp) 2))}
+   ::available-domains available-domains
+   ::min-xp min-xp
+   ::max-xp max-xp})
+
+;; TODO: Put the RNG in here somewhere!
+(defn train-proficiency-fn
+  [system {:keys [::available-domains ::min-xp ::max-xp]} entity]
+  (let [domain (first available-domains) ;; TODO: Randomness!
+        xp (int (/ (+ min-xp max-xp) 2))]
+    (has-magic/change-proficiency-xp system entity domain xp)))
 
 ;; action stuff
 
