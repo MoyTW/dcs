@@ -45,11 +45,11 @@
 ;; * HAS MAGIC COMPONENT *
 ;; *****************************************************************************
 
-(def domain #{:wood :fire :earth :metal :water})
-(def aptitude #{0.5 0.75 1.0 1.5 2})
+(def domain-values #{:wood :fire :earth :metal :water})
+(def aptitude-values #{0.5 0.75 1.0 1.5 2})
 
-(s/def ::domain domain)
-(s/def ::aptitude aptitude)
+(s/def ::domain domain-values)
+(s/def ::aptitude aptitude-values)
 (s/def ::xp int?)
 (s/def ::proficiency (s/keys :req [::domain ::xp ::aptitude]))
 
@@ -63,11 +63,16 @@
 (defn create [proficiencies]
   (->HasMagic proficiencies))
 
-(defn create-proficiency [domain aptitutde xp]
+(s/fdef create-proficiency
+  :args (s/cat :domain ::domain :aptitude ::aptitude :xp ::xp)
+  :ret ::proficiency)
+(defn create-proficiency [domain aptitude xp]
   {::domain domain
    ::aptitude aptitude
    ::xp xp})
 
+(s/fdef merge-proficiencies
+  :ret ::proficiencies)
 (defn merge-proficiencies [proficiencies]
   (->> (map #(hash-map (::domain %) %) proficiencies)
        (into {})))
