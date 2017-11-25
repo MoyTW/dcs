@@ -66,22 +66,20 @@
         (e/add-component devil (is-voidborn/create))
         (e/add-component devil (has-inventory/create [] 50))
         (e/add-component devil (has-capacity/create []))
-        (e/add-component devil (has-magic/create [])))))
+        (e/add-component devil (has-magic/create {})))))
 
-(defn- add-travel-action-provider
+(defn- add-travel-action
   "Adds one-way travel link"
   [system origin destination]
-  (let [travel-action (provides-action/create-travel-action system
-                                                            origin
-                                                            destination)
-        ;; Extremely ugly. Don't handle this here!
-        component (if-let [c (e/get-component system
-                                              origin
-                                              provides-action/record)]
-                    (update c :actions conj travel-action)
-                    (provides-action/create [travel-action]))]
-    (-> system
-        (e/add-component origin component))))
+  (->> (provides-action/create-travel-action system origin destination)
+       (provides-action/add-provided-action system origin)))
+
+(defn- add-train-proficiency-action
+  [system entity available-domains min-xp max-xp]
+  (->> (provides-action/create-train-proficiency-action available-domains
+                                                        min-xp
+                                                        max-xp)
+       (provides-action/add-provided-action system entity)))
 
 (defn- build-locations [system rng]
   (let [void (e/create-entity)
@@ -93,10 +91,16 @@
         (generate-town berlin "Berlin")
         (generate-town london "London")
         (generate-town moscow "Moscow")
-        (add-travel-action-provider berlin london)
-        (add-travel-action-provider london berlin)
-        (add-travel-action-provider moscow berlin)
-        (add-travel-action-provider berlin moscow))))
+
+        (add-travel-action berlin london)
+        (add-travel-action berlin moscow)
+        (add-train-proficiency-action berlin #{:earth :water} 100 500)
+
+        (add-travel-action london berlin)
+        (add-train-proficiency-action berlin #{:metal :wood} 100 500)
+
+        (add-travel-action moscow berlin)
+        (add-train-proficiency-action berlin #{:fire :metal} 100 500))))
 
 (defn- component-map [system entity]
   (->> (e/get-all-components-on-entity system entity)
@@ -130,7 +134,7 @@
 ;; We don't actually want to have different systems for summoners/devils; rather
 ;; we want to group them under a "Actor" or "AI" Component. This is just for
 ;; test purposes.
-(defn- summoners-system [system ticks]
+(defn- summoners-system [rng system ticks]
   (let [summoners (e/get-all-entities-with-component system IsHuman)
         get-component #(e/get-component system %1 %2)]
     (reduce (fn [sys summoner]
@@ -141,7 +145,7 @@
                     summoner-actions (-> (get-component summoner provides-action/record)
                                          :actions)
                     actions (concat location-actions summoner-actions)
-                    action (first actions)]
+                    action (r/seeded-rand-item rng actions)]
                 (provides-action/execute-action sys action summoner)))
             system
             summoners)))
@@ -152,9 +156,9 @@
 
 (defn- add-systems
   "Add system functions to the system (that's...kinda confusing)"
-  [system]
+  [system rng]
   (-> system
-      (bs/add-system-fn summoners-system)
+      (bs/add-system-fn (partial summoners-system rng))
       (bs/add-system-fn devils-system)))
 
 (defn- entity? [e]
@@ -185,7 +189,7 @@
   (let [rng (r/create-rng 2)
         sys (-> e/create-system
                 (seed-world rng)
-                add-systems)]
+                (add-systems rng))]
     (-> sys
         (advance 10)
         (advance 1)

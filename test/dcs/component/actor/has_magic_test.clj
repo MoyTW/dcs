@@ -2,13 +2,21 @@
   (:require [brute.entity :as e]
             [clojure.data :as data]
             [clojure.test :refer :all]
-            [dcs.components.actor.has-magic :as has-magic]))
+            [dcs.components.actor.has-magic :as has-magic]
+            [orchestra.spec.test :as st]))
+
+(defn with-specs [f]
+  (st/instrument)
+  (f))
+
+(use-fixtures :each with-specs)
 
 (deftest test-change-proficiency-xp
   (let [entity #uuid "1a689745-43f6-4dd9-99cd-6b4201602b93"
         component (has-magic/create
-                   {:fire (has-magic/create-proficiency :fire 1.0 500)
-                    :water (has-magic/create-proficiency :water 1.5 100)})
+                   (has-magic/merge-proficiencies
+                    [(has-magic/create-proficiency :fire 1.0 500)
+                     (has-magic/create-proficiency :water 1.5 100)]))
         old-sys (-> (e/create-system)
                     (e/add-entity entity)
                     (e/add-component entity component))

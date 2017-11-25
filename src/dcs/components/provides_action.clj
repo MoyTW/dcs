@@ -46,7 +46,7 @@
                :min-xp ::min-xp
                :max-xp ::max-xp)
   :ret ::train-proficiency-action
-  :fn (fn [{{:keys [min-xp max-xp]} :ret}]
+  :fn (fn [{{:keys [::min-xp ::max-xp]} :ret}]
         (<= min-xp max-xp)))
 (defn create-train-proficiency-action [available-domains min-xp max-xp]
   {::action-type ::train-proficiency
@@ -70,7 +70,8 @@
   :ret map?) ;; TODO: System!
 
 (def action-types->fns
-  {::travel travel-fn})
+  {::travel travel-fn
+   ::train-proficiency train-proficiency-fn})
 
 (s/def ::action-type (set (keys action-types->fns)))
 
@@ -87,6 +88,12 @@
 (def record ProvidesAction)
 
 (defn create [actions] (->ProvidesAction actions))
+
+(defn add-provided-action [system entity action]
+  (let [updated (if-let [c (e/get-component system entity ProvidesAction)]
+                  (update c :actions conj action)
+                  (create [action]))]
+    (e/add-component system entity updated)))
 
 (defn execute-action [system {:keys [::action-type] :as action} entity]
   (let [action-fn (action-type action-types->fns)]

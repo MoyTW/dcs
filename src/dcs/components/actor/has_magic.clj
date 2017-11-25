@@ -79,7 +79,7 @@
 
 (defn- create-rand-proficiency [^java.util.Random rng max-level domain]
   (create-proficiency domain
-                      (first (r/seeded-shuffle rng aptitude))
+                      (r/seeded-rand-item rng aptitude)
                       (r/seeded-next-int rng (xp-for-level max-level))))
 
 (defn create-rand-has-magic
