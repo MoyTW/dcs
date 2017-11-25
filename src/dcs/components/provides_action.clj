@@ -26,7 +26,9 @@
   {::action-type ::travel
    ::payoff {::intrinsic-value 0}
    ::origin origin
-   ::destination destination})
+   ::destination destination
+   ::requirements []
+   ::costs []})
 
 (defn travel-fn [system {:keys [::origin ::destination]} entity]
   (has-location/change-location system entity destination))
@@ -50,8 +52,10 @@
         (<= min-xp max-xp)))
 (defn create-train-proficiency-action [available-domains min-xp max-xp]
   {::action-type ::train-proficiency
-    ;; TODO: find out what you want 'value' to be baseline'd on
+   ;; TODO: find out what you want 'value' to be baseline'd on
    ::payoff {::intrinsic-value (int (/ (+ min-xp max-xp) 2))}
+   ::requirements []
+   ::costs []
    ::available-domains available-domains
    ::min-xp min-xp
    ::max-xp max-xp})
@@ -78,8 +82,10 @@
 (s/def ::intrinsic-value int?)
 (s/def ::payoff (s/keys :req [::intrinsic-value]))
 
-(s/def ::action (s/keys :req [::action-type ::payoff]
-                        :opt [::costs ::requirements]))
+(s/def ::action (s/keys :req [::action-type
+                              ::payoff
+                              ::requirements
+                              ::costs]))
 
 (s/def ::actions (s/coll-of ::action))
 
@@ -89,6 +95,8 @@
 
 (defn create [actions] (->ProvidesAction actions))
 
+(s/fdef add-provided-action
+  :args (s/cat :system map? :entity identity :action ::action))
 (defn add-provided-action [system entity action]
   (let [updated (if-let [c (e/get-component system entity ProvidesAction)]
                   (update c :actions conj action)
@@ -98,5 +106,3 @@
 (defn execute-action [system {:keys [::action-type] :as action} entity]
   (let [action-fn (action-type action-types->fns)]
     (action-fn system action entity)))
-
-(orchestra.spec.test/instrument)

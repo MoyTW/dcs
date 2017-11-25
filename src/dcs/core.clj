@@ -115,7 +115,7 @@
                              (generate-summoner rng)
                              generate-devil))
                        new-system
-                       (take 2 (repeat 1)))]
+                       (take 1 (repeat 1)))]
     (prn "World was seeded.")
     (prn "Locations")
     (clojure.pprint/pprint
@@ -179,18 +179,27 @@
      m)))
 
 (defn- advance [sys delta]
-  (let [next-sys (bs/process-one-game-tick sys delta)]
-    (clojure.pprint/pprint (uuids->names next-sys (take 2 (data/diff sys next-sys))))
+  (let [next-sys (bs/process-one-game-tick sys delta)
+        [only-sys only-next-sys _] (take 2 (data/diff sys next-sys))]
+    (clojure.pprint/pprint (uuids->names sys only-sys))
+    (clojure.pprint/pprint (uuids->names next-sys only-next-sys))
+    (println)
     next-sys))
 
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
-  (let [rng (r/create-rng 2)
+  (let [rng (r/create-rng 4)
         sys (-> e/create-system
                 (seed-world rng)
                 (add-systems rng))]
     (-> sys
+        (advance 10)
+        (advance 10)
+        (advance 10)
+        (advance 10)
+        (advance 10)
+        (advance 10)
         (advance 10)
         (advance 1)
         (advance 25))
