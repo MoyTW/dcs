@@ -1,6 +1,5 @@
 (ns dcs.components.provides-action
-  (:require [clojure.set :as cset]
-            [clojure.spec.alpha :as s]
+  (:require [clojure.spec.alpha :as s]
             [dcs.components.actor.has-magic :as has-magic]
             [dcs.components.has-location :as has-location]
             [dcs.components.location.is-location :as is-location]
@@ -8,13 +7,15 @@
 
 ;; REQUIREMENTS
 
-(defn- create-domain-requirement [available-domains]
+(s/fdef create-domain-requirement
+  :args (s/cat :required-domain ::has-magic/domain))
+(defn- create-domain-requirement [required-domain]
   {::requirement-type ::domain
-   ::requires-one available-domains})
+   ::required-domain required-domain})
 
-(defn- domain-fn [system {:keys [::requires-one] :as requirement} entity]
+(defn- domain-fn [system {:keys [::required-domain]} entity]
   (let [entity-domains (has-magic/get-proficiencies-domains system entity)]
-    (boolean (seq (cset/intersection requires-one entity-domains)))))
+    (contains? entity-domains required-domain)))
 
 (def requirement-types->fns
   {::domain domain-fn})
@@ -69,37 +70,33 @@
 
 ;; train-proficiency action
 
-(s/def ::available-domains
-  (s/coll-of ::has-magic/domain :kind set? :min-count 1))
 (s/def ::min-xp int?)
 (s/def ::max-xp int?)
 (s/def ::train-proficiency-action
   (s/and
    ::action
-   (s/keys :req [::available-domains ::min-xp ::max-xp])))
+   (s/keys :req [::has-magic/domain ::min-xp ::max-xp])))
 
 (s/fdef create-train-proficiency-action
-  :args (s/cat :available-domains ::available-domains
+  :args (s/cat :domain ::has-magic/domain
                :min-xp ::min-xp
                :max-xp ::max-xp)
   :ret ::train-proficiency-action
   :fn (fn [{{:keys [::min-xp ::max-xp]} :ret}]
         (<= min-xp max-xp)))
-(defn create-train-proficiency-action [available-domains min-xp max-xp]
+(defn create-train-proficiency-action [domain min-xp max-xp]
   {::action-type ::train-proficiency
    ;; TODO: find out what you want 'value' to be baseline'd on
    ::payoff {::intrinsic-value (int (/ (+ min-xp max-xp) 2))}
-   ::requirements [(create-domain-requirement available-domains)]
+   ::requirements [(create-domain-requirement domain)]
    ::costs []
-   ::available-domains available-domains
+   ::has-magic/domain domain
    ::min-xp min-xp
    ::max-xp max-xp})
 
-;; TODO: Put the RNG in here somewhere!
 (defn train-proficiency-fn
-  [system {:keys [::available-domains ::min-xp ::max-xp]} entity]
-  (let [domain (first available-domains) ;; TODO: Randomness!
-        xp (int (/ (+ min-xp max-xp) 2))]
+  [system {:keys [::has-magic/domain ::min-xp ::max-xp]} entity]
+  (let [xp (int (/ (+ min-xp max-xp) 2))]
     (has-magic/change-proficiency-xp system entity domain xp)))
 
 ;; action stuff

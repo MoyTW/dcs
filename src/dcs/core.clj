@@ -74,10 +74,14 @@
 
 (defn- add-train-proficiency-action
   [system entity available-domains min-xp max-xp]
-  (->> (provides-action/create-train-proficiency-action available-domains
-                                                        min-xp
-                                                        max-xp)
-       (provides-action/add-provided-action system entity)))
+  (let [actions (map #(provides-action/create-train-proficiency-action
+                       %
+                       min-xp
+                       max-xp)
+                     available-domains)]
+    (reduce #(provides-action/add-provided-action %1 entity %2)
+            system
+            actions)))
 
 (defn- build-locations [system rng]
   (let [void (ecs/create-entity)
