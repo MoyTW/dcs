@@ -1,7 +1,6 @@
 (ns dcs.core
   (:gen-class)
-  (:require [brute.system :as bs]
-            [clojure.spec.alpha :as s]
+  (:require [clojure.spec.alpha :as s]
             [clojure.data :as data]
             [clojure.walk :as walk]
             [dcs.contract-template :as ct]
@@ -164,8 +163,8 @@
   "Add system functions to the system (that's...kinda confusing)"
   [system rng]
   (-> system
-      (bs/add-system-fn (partial summoners-system rng))
-      (bs/add-system-fn devils-system)))
+      (ecs/add-system-fn (partial summoners-system rng))
+      (ecs/add-system-fn devils-system)))
 
 (defn- entity? [e]
   (= (type e) java.util.UUID))
@@ -185,7 +184,7 @@
      m)))
 
 (defn- advance [sys delta]
-  (let [next-sys (bs/process-one-game-tick sys delta)
+  (let [next-sys (ecs/process-one-game-tick sys delta)
         [only-sys only-next-sys _] (take 2 (data/diff sys next-sys))]
     (clojure.pprint/pprint (uuids->names sys only-sys))
     (clojure.pprint/pprint (uuids->names next-sys only-next-sys))

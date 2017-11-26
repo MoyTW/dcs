@@ -82,3 +82,12 @@
   :ret (s/coll-of ::Component))
 (defn get-components-on-entity [system entity]
   (e/get-all-components-on-entity system entity))
+
+;; #############################################################################
+;; # Brute System Wrappers                                                     #
+;; #############################################################################
+
+(defn add-system-fn [system fn] (bs/add-system-fn system fn))
+
+(defn process-one-game-tick [system delta]
+  (bs/process-one-game-tick system delta))
