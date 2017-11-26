@@ -1,8 +1,6 @@
 (ns dcs.core
   (:gen-class)
   (:require [clojure.spec.alpha :as s]
-            [clojure.data :as data]
-            [clojure.walk :as walk]
             [dcs.contract-template :as ct]
             [dcs.components.has-name :as has-name]
             [dcs.components.has-location :as has-location]
@@ -15,6 +13,7 @@
             [dcs.components.location.is-location :as is-location]
             [dcs.components.location.is-void :as is-void]
             [dcs.components.provides-action :as provides-action]
+            [dcs.debug :as debug]
             [dcs.ecs :as ecs]
             [dcs.random :as r]
             [orchestra.spec.test :as st]))
@@ -173,29 +172,9 @@
       (ecs/add-system-fn (partial summoners-system rng))
       (ecs/add-system-fn devils-system)))
 
-(defn- entity? [e]
-  (= (type e) java.util.UUID))
-
-(defn obj->name-if-uuid [sys o]
-  (mapv #(if (entity? %) (has-name/get-name sys %) %) o))
-
-(defn uuids->names
-  "Recursively transforms all map UUID values to names"
-  [sys m]
-  (let [transform #(obj->name-if-uuid sys %)]
-    (walk/postwalk
-     (fn [obj]
-       (if (map? obj)
-         (into {} (map transform obj))
-         obj))
-     m)))
-
 (defn- advance [sys delta]
-  (let [next-sys (ecs/process-one-game-tick sys delta)
-        [only-sys only-next-sys _] (take 2 (data/diff sys next-sys))]
-    (clojure.pprint/pprint (uuids->names sys only-sys))
-    (clojure.pprint/pprint (uuids->names next-sys only-next-sys))
-    (println)
+  (let [next-sys (ecs/process-one-game-tick sys delta)]
+    (debug/print-pretty-diff! sys next-sys)
     next-sys))
 
 (defn -main
