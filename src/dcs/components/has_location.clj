@@ -7,6 +7,9 @@
 
 (s/def ::location ::ecs/Entity)
 
+(ecs/def-component ::HasLocation
+  (s/keys :req [::location]))
+
 ;; I do not really like doing the data integrity checks on the system inside of
 ;; a function def here, but this is the only way I'm aware of to get that really
 ;; nice printout of "Hey I expected X but Y!".
@@ -18,6 +21,7 @@
 (s/fdef create
   ;; TODO: ::system and ::entity need to be things
   :args (s/cat :system ::ecs/System :location ::ecs/Entity)
+  :ret ::HasLocation
   :fn (fn [{{:keys [system location]} :args}]
         (is-location/location-entity-exists? system location)))
 (defn create [system location]
