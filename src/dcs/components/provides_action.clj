@@ -12,10 +12,10 @@
    ::action
    (s/keys :req [::origin ::destination])))
 
-(defn t? [_] true) ;; TODO: ::Entity
-
 (s/fdef create-travel-action
-  :args (s/cat :system map? :origin t? :destination t?)
+  :args (s/cat :system ::ecs/System
+               :origin ::ecs/Entity
+               :destination ::ecs/Entity)
   :ret ::travel-action
   :fn (fn [{{:keys [origin destination]} :ret {:keys [system]} :args}]
         (s/and (is-location/location-entity-exists? system origin)
@@ -68,13 +68,17 @@
 
 ;; action stuff
 
-(s/fdef ::action-fn
-  :args (s/cat :system map? :action ::action :entity identity) ;; TODO: UUID
-  :ret map?) ;; TODO: System!
-
-(def action-types->fns
+(def ^:private action-types->fns
   {::travel travel-fn
    ::train-proficiency train-proficiency-fn})
+
+(s/fdef ::action-fn
+  :args (s/cat :system ::ecs/System :action ::action :entity ::ecs/Entity)
+  :ret ::ecs/System)
+
+(s/fdef get-action-by-type :ret ::action-fn)
+(defn- get-action-by-type [action-type]
+  (get action-types->fns action-type))
 
 ;; action component
 
@@ -121,5 +125,5 @@
 (s/fdef execute-action
   :args (s/cat :system ::ecs/System :action ::action :entity ::ecs/Entity))
 (defn execute-action [system {:keys [::action-type] :as action} entity]
-  (let [action-fn (action-type action-types->fns)]
+  (let [action-fn (get-action-by-type action-type)]
     (action-fn system action entity)))
