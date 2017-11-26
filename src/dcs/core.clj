@@ -24,8 +24,7 @@
            [dcs.components.actor.is_human IsHuman]
            [dcs.components.location.is_location IsLocation]
            [dcs.components.location.is_void IsVoid]
-           [dcs.components.has_location HasLocation]
-           [dcs.components.has_name HasName]))
+           [dcs.components.has_location HasLocation]))
 
 (def c (atom 0))
 
@@ -165,7 +164,7 @@
   (= (type e) java.util.UUID))
 
 (defn obj->name-if-uuid [sys o]
-  (mapv #(if (entity? %) (e/get-component sys % has-name/record) %) o))
+  (mapv #(if (entity? %) (e/get-component sys % has-name/component-type) %) o))
 
 (defn uuids->names
   "Recursively transforms all map UUID values to names"

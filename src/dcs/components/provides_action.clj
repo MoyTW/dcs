@@ -3,8 +3,7 @@
             [clojure.spec.alpha :as s]
             [dcs.components.actor.has-magic :as has-magic]
             [dcs.components.has-location :as has-location]
-            [dcs.components.location.is-location :as is-location])
-  (:import [dcs.components.has_name HasName]))
+            [dcs.components.location.is-location :as is-location]))
 
 ;; travel stuff
 

@@ -1,14 +1,16 @@
 (ns dcs.components.has-name
-  (:require [clojure.spec.alpha :as s]))
+  (:require [clojure.spec.alpha :as s]
+            [dcs.ecs :as ecs]))
 
-(s/def ::has-name string?)
+(def component-type ::HasName)
 
-(s/fdef ->HasCapacity
-  :ret ::has-name)
+(s/def ::name string?)
 
-(defrecord HasName [name])
+(ecs/def-component ::HasNameComponent
+  (s/keys :req [::name]))
 
-(def record HasName)
-
+(s/fdef create :ret ::HasNameComponent)
 (defn create [name]
-  (->HasName name))
+  (ecs/create-component
+   component-type
+   ::name name))
