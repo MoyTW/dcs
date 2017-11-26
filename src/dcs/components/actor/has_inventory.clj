@@ -1,17 +1,20 @@
 (ns dcs.components.actor.has-inventory
-  (:require [brute.entity :as e]
-            [clojure.spec.alpha :as s]))
+  (:require [clojure.spec.alpha :as s]
+            [dcs.ecs :as ecs]))
+
+(def component-type ::HasInventory)
 
 (s/def ::max-size int?)
-(s/def ::contents (s/coll-of [::item-id]))
+(s/def ::contents (s/coll-of [::ecs/Entity]))
 
-(s/def ::has-inventory (s/keys :req-un [::contents ::max-size]))
+(ecs/def-component ::HasInventory
+  (s/keys :req [::contents ::max-size]))
 
-(s/fdef ->HasInventory
+(s/fdef create
   :args (s/cat :contents ::contents :max-size ::max-size)
-  :ret ::has-inventory)
-
-(defrecord HasInventory [contents max-size])
-
+  :ret ::HasInventory)
 (defn create [contents max-size]
-  (->HasInventory contents max-size))
+  (ecs/create-component
+   component-type
+   ::contents contents
+   ::max-size max-size))

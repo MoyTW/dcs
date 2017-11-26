@@ -18,12 +18,7 @@
             [dcs.components.location.is-void :as is-void]
             [dcs.components.provides-action :as provides-action]
             [dcs.random :as r]
-            [orchestra.spec.test :as st])
-  ;; defrecords are implemented /w Java, so must use import
-  (:import [dcs.components.actor.is_devil IsDevil]
-           [dcs.components.actor.is_human IsHuman]
-           [dcs.components.location.is_location IsLocation]
-           [dcs.components.location.is_void IsVoid]))
+            [orchestra.spec.test :as st]))
 
 (def c (atom 0))
 
@@ -39,8 +34,12 @@
     (reduce #(e/add-component %1 new-entity %2) system-with-new-town components)))
 
 (defn- generate-summoner [system rng]
-  (let [void (first (e/get-all-entities-with-component system IsVoid))
-        hometown (->> (e/get-all-entities-with-component system IsLocation)
+  (let [void (first (e/get-all-entities-with-component
+                     system
+                     is-void/component-type))
+        hometown (->> (e/get-all-entities-with-component
+                       system
+                       is-location/component-type)
                       (remove #{void})
                       (r/seeded-rand-item rng))
         summoner (e/create-entity)]
@@ -55,7 +54,9 @@
 
 (defn- generate-devil [system]
   (let [devil (e/create-entity)
-        void (first (e/get-all-entities-with-component system IsVoid))]
+        void (first (e/get-all-entities-with-component
+                     system
+                     is-void/component-type))]
     (-> system
         (e/add-entity devil)
         (e/add-component devil (has-location/create system void))
@@ -117,15 +118,21 @@
     (prn "World was seeded.")
     (prn "Locations")
     (clojure.pprint/pprint
-     (for [location (e/get-all-entities-with-component seeded IsLocation)]
+     (for [location (e/get-all-entities-with-component
+                     seeded
+                     is-location/component-type)]
        (component-map seeded location)))
     (prn "Humans")
     (clojure.pprint/pprint
-     (for [human (e/get-all-entities-with-component seeded IsHuman)]
+     (for [human (e/get-all-entities-with-component
+                  seeded
+                  is-human/component-type)]
        (component-map seeded human)))
     (prn "Devils")
     (clojure.pprint/pprint
-     (for [devil (e/get-all-entities-with-component seeded IsDevil)]
+     (for [devil (e/get-all-entities-with-component
+                  seeded
+                  is-devil/component-type)]
        (component-map seeded devil)))
     seeded))
 
@@ -133,14 +140,14 @@
 ;; we want to group them under a "Actor" or "AI" Component. This is just for
 ;; test purposes.
 (defn- summoners-system [rng system ticks]
-  (let [summoners (e/get-all-entities-with-component system IsHuman)
+  (let [summoners (e/get-all-entities-with-component
+                   system
+                   is-human/component-type)
         get-component #(e/get-component system %1 %2)]
     (reduce (fn [sys summoner]
-              (let [location-actions (-> (has-location/get-location sys summoner)
-                                         (get-component provides-action/record)
-                                         :actions)
-                    summoner-actions (-> (get-component summoner provides-action/record)
-                                         :actions)
+              (let [location-actions (->> (has-location/get-location sys summoner)
+                                          (provides-action/get-actions sys))
+                    summoner-actions (provides-action/get-actions sys summoner)
                     actions (concat location-actions summoner-actions)
                     action (r/seeded-rand-item rng actions)]
                 (provides-action/execute-action sys action summoner)))
@@ -148,7 +155,9 @@
             summoners)))
 
 (defn- devils-system [system ticks]
-  (let [devils (e/get-all-entities-with-component system IsDevil)]
+  (let [devils (e/get-all-entities-with-component
+                system
+                is-devil/component-type)]
     system))
 
 (defn- add-systems
@@ -186,7 +195,7 @@
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
-  (let [rng (r/create-rng 4)
+  (let [rng (r/create-rng 3)
         sys (-> e/create-system
                 (seed-world rng)
                 (add-systems rng))]

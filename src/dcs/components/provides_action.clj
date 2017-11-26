@@ -77,6 +77,10 @@
   {::travel travel-fn
    ::train-proficiency train-proficiency-fn})
 
+;; action component
+
+(def ^:private component-type ::ProvidesAction)
+
 (s/def ::action-type (set (keys action-types->fns)))
 
 (s/def ::intrinsic-value int?)
@@ -89,16 +93,25 @@
 
 (s/def ::actions (s/coll-of ::action))
 
-(defrecord ProvidesAction [actions])
+(ecs/def-component ::ProvidesAction
+  (s/keys :req [::actions]))
 
-(def record ProvidesAction)
+(s/fdef create :ret ::ProvidesAction)
+(defn create [actions]
+  (ecs/create-component
+   component-type
+   ::actions actions))
 
-(defn create [actions] (->ProvidesAction actions))
+(s/fdef get-actions
+  :args (s/cat :system ::ecs/System :entity ::ecs/Entity)
+  :ret ::actions)
+(defn get-actions [system entity]
+  (::actions (ecs/get-component system entity component-type)))
 
 (s/fdef add-provided-action
   :args (s/cat :system map? :entity identity :action ::action))
 (defn add-provided-action [system entity action]
-  (let [updated (if-let [c (e/get-component system entity ProvidesAction)]
+  (let [updated (if-let [c (e/get-component system entity component-type)]
                   (update c :actions conj action)
                   (create [action]))]
     (e/add-component system entity updated)))

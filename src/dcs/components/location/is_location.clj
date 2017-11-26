@@ -1,9 +1,13 @@
 (ns dcs.components.location.is-location
-  (:require [brute.entity :as e]))
+  (:require [clojure.spec.alpha :as s]
+            [dcs.ecs :as ecs]))
 
-(defrecord IsLocation [])
+(def component-type ::IsLocation)
 
-(defn create [] (->IsLocation))
+(ecs/def-component ::IsLocation map?)
+
+(s/fdef create :ret ::IsLocation)
+(defn create [] (ecs/create-component component-type))
 
 (defn location-entity-exists? [system location]
-  (e/get-component system location IsLocation))
+  (ecs/get-component system location component-type))

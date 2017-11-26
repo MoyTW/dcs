@@ -1,5 +1,10 @@
-(ns dcs.components.location.is-void)
+(ns dcs.components.location.is-void
+  (:require [clojure.spec.alpha :as s]
+            [dcs.ecs :as ecs]))
 
-(defrecord IsVoid [])
+(def component-type ::IsVoid)
 
-(defn create [] (->IsVoid))
+(ecs/def-component ::IsVoid map?)
+
+(s/fdef create :ret ::IsVoid)
+(defn create [] (ecs/create-component component-type))

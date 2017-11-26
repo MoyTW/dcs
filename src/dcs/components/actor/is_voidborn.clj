@@ -1,5 +1,10 @@
-(ns dcs.components.actor.is-voidborn)
+(ns dcs.components.actor.is-voidborn
+  (:require [clojure.spec.alpha :as s]
+            [dcs.ecs :as ecs]))
 
-(defrecord IsVoidborn [])
+(def ^:private component-type ::IsVoidborn)
 
-(defn create [] (->IsVoidborn))
+(ecs/def-component ::IsVoidborn map?)
+
+(s/fdef create :ret ::IsVoidborn)
+(defn create [] (ecs/create-component component-type))

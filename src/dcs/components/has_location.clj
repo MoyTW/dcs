@@ -6,9 +6,7 @@
 (def ^:private component-type ::HasLocation)
 
 (s/def ::location ::ecs/Entity)
-
-(ecs/def-component ::HasLocation
-  (s/keys :req [::location]))
+(ecs/def-component ::HasLocation (s/keys :req [::location]))
 
 ;; I do not really like doing the data integrity checks on the system inside of
 ;; a function def here, but this is the only way I'm aware of to get that really

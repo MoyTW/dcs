@@ -1,6 +1,6 @@
 (ns dcs.components.actor.has-magic
-  (:require [brute.entity :as e]
-            [clojure.spec.alpha :as s]
+  (:require [clojure.spec.alpha :as s]
+            [dcs.ecs :as ecs]
             [dcs.random :as r]))
 
 ;; Probably belongs somewhere else. Uses D&D levels. Formula is: XP-for-level =
@@ -45,23 +45,30 @@
 ;; * HAS MAGIC COMPONENT *
 ;; *****************************************************************************
 
-(def domain-values #{:wood :fire :earth :metal :water})
-(def aptitude-values #{0.5 0.75 1.0 1.5 2})
+(def component-type ::HasMagic)
 
+(def domain-values #{:wood :fire :earth :metal :water})
 (s/def ::domain domain-values)
+
+(def aptitude-values #{0.5 0.75 1.0 1.5 2})
 (s/def ::aptitude aptitude-values)
+
 (s/def ::xp int?)
+
 (s/def ::proficiency (s/keys :req [::domain ::xp ::aptitude]))
 
 (s/def ::proficiencies (s/map-of ::domain ::proficiency))
 
-(s/fdef ->HasMagic
-  :args (s/cat :proficiencies ::proficiencies))
+(ecs/def-component ::HasMagic
+  (s/keys :req [::proficiencies]))
 
-(defrecord HasMagic [proficiencies])
-
+(s/fdef create
+  :args (s/cat :proficiencies ::proficiencies)
+  :ret ::HasMagic)
 (defn create [proficiencies]
-  (->HasMagic proficiencies))
+  (ecs/create-component
+   component-type
+   ::proficiencies proficiencies))
 
 (s/fdef create-proficiency
   :args (s/cat :domain ::domain :aptitude ::aptitude :xp ::xp)
@@ -97,7 +104,7 @@
                :xp-delta int?))
 (defn change-proficiency-xp
   [system entity domain xp-delta]
-  (let [updated (update-in (e/get-component system entity HasMagic)
+  (let [updated (update-in (ecs/get-component system entity component-type)
                            [:proficiencies domain ::xp]
                            (partial + xp-delta))]
-    (e/add-component system entity updated)))
+    (ecs/add-component system entity updated)))

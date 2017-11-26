@@ -1,5 +1,10 @@
-(ns dcs.components.actor.is-human)
+(ns dcs.components.actor.is-human
+  (:require [clojure.spec.alpha :as s]
+            [dcs.ecs :as ecs]))
 
-(defrecord IsHuman [])
+(def component-type ::IsHuman)
 
-(defn create [] (->IsHuman))
+(ecs/def-component ::IsHuman map?)
+
+(s/fdef create :ret ::IsHuman)
+(defn create [] (ecs/create-component component-type))
