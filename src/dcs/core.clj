@@ -23,8 +23,7 @@
   (:import [dcs.components.actor.is_devil IsDevil]
            [dcs.components.actor.is_human IsHuman]
            [dcs.components.location.is_location IsLocation]
-           [dcs.components.location.is_void IsVoid]
-           [dcs.components.has_location HasLocation]))
+           [dcs.components.location.is_void IsVoid]))
 
 (def c (atom 0))
 
@@ -137,8 +136,7 @@
   (let [summoners (e/get-all-entities-with-component system IsHuman)
         get-component #(e/get-component system %1 %2)]
     (reduce (fn [sys summoner]
-              (let [location-actions (-> (get-component summoner has-location/record)
-                                         :location
+              (let [location-actions (-> (has-location/get-location sys summoner)
                                          (get-component provides-action/record)
                                          :actions)
                     summoner-actions (-> (get-component summoner provides-action/record)
