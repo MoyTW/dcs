@@ -11,11 +11,13 @@
 ;; it's just freaking hard to read them. Capitalizing the Entity, Component, and
 ;; System specs is just so I can find them easily.
 
-(s/def ::Entity #(instance? UUID %))
+(s/def ::Entity uuid?)
 
 (s/def ::component-type qualified-keyword?)
 (s/def ::Component (s/keys :req [::component-type]))
 
+(s/def ::entity-components map?)
+(s/def ::entity-component-types map?)
 (s/def ::System (s/keys :req-un [::entity-components ::entity-component-types]))
 
 (defmacro def-component

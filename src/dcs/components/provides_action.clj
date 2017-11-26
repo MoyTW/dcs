@@ -5,6 +5,10 @@
             [dcs.components.location.is-location :as is-location]
             [dcs.ecs :as ecs]))
 
+;; COSTS
+
+(s/def ::costs any?)
+
 ;; travel stuff
 
 (s/def ::travel-action
@@ -33,6 +37,7 @@
   (has-location/change-location system entity destination))
 
 ;; train-proficiency action
+
 (s/def ::available-domains
   (s/coll-of ::has-magic/domain :kind set? :min-count 1))
 (s/def ::min-xp int?)
@@ -72,11 +77,37 @@
   {::travel travel-fn
    ::train-proficiency train-proficiency-fn})
 
-(s/fdef ::action-fn
-  :args (s/cat :system ::ecs/System :action ::action :entity ::ecs/Entity)
-  :ret ::ecs/System)
+;; It's worth leaving this here as a warning to future selves.
+;;
+;; What I was attempting to do here was to say "When you call
+;; get-action-by-type, you expect some function back whose arguments are [system
+;; action entity] of specs [::ecs/System ::action ::ecs/Entity] and which
+;; returns a ::ecs/System. What I was expecting it to do was to go and check and
+;; see if the function had been spec'd, and if the spec matched that it would
+;; say okay and pass. So I wrote the following:
+;;
+;; (s/fdef get-action-by-type
+;;   :ret (s/fspec
+;;         :args (s/cat :system ::ecs/System :action ::action :entity ::ecs/Entity)
+;;         :ret ::ecs/System))
+;;
+;; I also augmented travel-fn with a corresponding spec, assuming that would do
+;; the job.
+;;
+;; However what that snippet does is actually *generatively tests* the returned
+;; function from get-action-by-type. This is completely categorically impossible
+;; to reconcile with how I am using the lookup, as the actual action send into
+;; the function must correspond to its own action, and it simply won't make
+;; sense to throw a "travel" action into a "fight" function - it won't resolve
+;; properly and might not conform. There's no way to sanely (that is, without
+;; building some insane spec parallel mapping edifice) match those together than
+;; I can think of.
+;;
+;; tl;dr: clojure.spec can't do all of the things you'd expect in terms of
+;; type-checking! when you fspec something it *doesn't* try to match the specs
+;; defined elsewhere, it tries to generatively test the function and it's very
+;; picky!
 
-(s/fdef get-action-by-type :ret ::action-fn)
 (defn- get-action-by-type [action-type]
   (get action-types->fns action-type))
 
@@ -123,7 +154,8 @@
     (ecs/add-component system entity updated)))
 
 (s/fdef execute-action
-  :args (s/cat :system ::ecs/System :action ::action :entity ::ecs/Entity))
+  :args (s/cat :system ::ecs/System :action ::action :entity ::ecs/Entity)
+  :ret ::ecs/System)
 (defn execute-action [system {:keys [::action-type] :as action} entity]
   (let [action-fn (get-action-by-type action-type)]
     (action-fn system action entity)))
