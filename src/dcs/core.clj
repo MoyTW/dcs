@@ -162,7 +162,7 @@
   (= (type e) java.util.UUID))
 
 (defn obj->name-if-uuid [sys o]
-  (mapv #(if (entity? %) (e/get-component sys % has-name/component-type) %) o))
+  (mapv #(if (entity? %) (has-name/get-name sys %) %) o))
 
 (defn uuids->names
   "Recursively transforms all map UUID values to names"

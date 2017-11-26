@@ -3,7 +3,8 @@
             [clojure.spec.alpha :as s]
             [dcs.components.actor.has-magic :as has-magic]
             [dcs.components.has-location :as has-location]
-            [dcs.components.location.is-location :as is-location]))
+            [dcs.components.location.is-location :as is-location]
+            [dcs.ecs :as ecs]))
 
 ;; travel stuff
 
@@ -102,6 +103,8 @@
                   (create [action]))]
     (e/add-component system entity updated)))
 
+(s/fdef execute-action
+  :args (s/cat :system ::ecs/System :action ::action :entity ::ecs/Entity))
 (defn execute-action [system {:keys [::action-type] :as action} entity]
   (let [action-fn (action-type action-types->fns)]
     (action-fn system action entity)))
