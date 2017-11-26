@@ -5,13 +5,18 @@
   (:import (java.util UUID)
            (clojure.lang PersistentArrayMap)))
 
-(defmethod e/get-component-type PersistentArrayMap
-  [component]
-  (::component-type component))
+;; Define Entity, Component, System
+;;
+;; They're capitalized because I'm having a hell of a time reading specs, and
+;; it's just freaking hard to read them. Capitalizing the Entity, Component, and
+;; System specs is just so I can find them easily.
 
-(s/def ::component-type keyword?)
+(s/def ::Entity #(instance? UUID %))
 
+(s/def ::component-type qualified-keyword?)
 (s/def ::Component (s/keys :req [::component-type]))
+
+(s/def ::System (s/keys :req-un [::entity-components ::entity-component-types]))
 
 (defmacro def-component
   "Adds the Component spec to the spec-form"
@@ -24,3 +29,23 @@
        (map vec)
        (into {})
        (merge {::component-type component-type})))
+
+(defmethod e/get-component-type PersistentArrayMap
+  [component]
+  (::component-type component))
+
+(s/fdef add-component
+  :args (s/cat :system ::System
+               :entity ::Entity
+               :component ::Component)
+  :ret ::System)
+(defn add-component [system entity component]
+  (e/add-component system entity component))
+
+(s/fdef get-component
+  :args (s/cat :system ::System
+               :entity ::Entity
+               :component-type ::component-type)
+  :ret ::Component)
+(defn get-component [system entity component-type]
+  (e/get-component system entity component-type))
