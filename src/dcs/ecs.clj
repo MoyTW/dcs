@@ -30,9 +30,28 @@
        (into {})
        (merge {::component-type component-type})))
 
+(s/fdef define-entity :args (s/cat :entity string?) :ret ::Entity)
+(defn define-entity [entity]
+  (UUID/fromString entity))
+
+;; #############################################################################
+;; # Brute Entity Wrappers                                                     #
+;; #############################################################################
+
 (defmethod e/get-component-type PersistentArrayMap
   [component]
   (::component-type component))
+
+(s/fdef create-system :ret ::System)
+(defn create-system [] (e/create-system))
+
+(s/fdef create-entity :ret ::Entity)
+(defn create-entity [] (e/create-entity))
+
+(s/fdef add-entity
+  :args (s/cat :system ::System :entity ::Entity)
+  :ret ::System)
+(defn add-entity [system entity] (e/add-entity system entity))
 
 (s/fdef add-component
   :args (s/cat :system ::System
@@ -46,6 +65,20 @@
   :args (s/cat :system ::System
                :entity ::Entity
                :component-type ::component-type)
-  :ret ::Component)
+  :ret (s/or :nil nil? :component ::Component))
 (defn get-component [system entity component-type]
   (e/get-component system entity component-type))
+
+(s/fdef get-all-entities-with-component
+  :args (s/cat :system ::System
+               :component-type ::component-type)
+  :ret (s/coll-of ::Entity))
+(defn get-entities-with-component [system component-type]
+  (e/get-all-entities-with-component system component-type))
+
+(s/fdef get-components-on-entity
+  :args (s/cat :system ::System
+               :entity ::Entity)
+  :ret (s/coll-of ::Component))
+(defn get-components-on-entity [system entity]
+  (e/get-all-components-on-entity system entity))

@@ -1,6 +1,5 @@
 (ns dcs.components.provides-action
-  (:require [brute.entity :as e]
-            [clojure.spec.alpha :as s]
+  (:require [clojure.spec.alpha :as s]
             [dcs.components.actor.has-magic :as has-magic]
             [dcs.components.has-location :as has-location]
             [dcs.components.location.is-location :as is-location]
@@ -104,17 +103,20 @@
 
 (s/fdef get-actions
   :args (s/cat :system ::ecs/System :entity ::ecs/Entity)
-  :ret ::actions)
+  :ret (s/or :nil nil? :actions ::actions))
 (defn get-actions [system entity]
   (::actions (ecs/get-component system entity component-type)))
 
 (s/fdef add-provided-action
-  :args (s/cat :system map? :entity identity :action ::action))
+  :args (s/cat :system ::ecs/System :entity ::ecs/Entity :action ::action)
+  :ret ::ecs/System
+  :fn (fn [{{:keys [system entity action]} :args sys :ret}]
+        (contains? (set (get-actions sys entity)) action)))
 (defn add-provided-action [system entity action]
-  (let [updated (if-let [c (e/get-component system entity component-type)]
-                  (update c :actions conj action)
+  (let [updated (if-let [c (ecs/get-component system entity component-type)]
+                  (update c ::actions conj action)
                   (create [action]))]
-    (e/add-component system entity updated)))
+    (ecs/add-component system entity updated)))
 
 (s/fdef execute-action
   :args (s/cat :system ::ecs/System :action ::action :entity ::ecs/Entity))

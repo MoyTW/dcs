@@ -1,7 +1,6 @@
 (ns dcs.core
   (:gen-class)
-  (:require [brute.entity :as e]
-            [brute.system :as bs]
+  (:require [brute.system :as bs]
             [clojure.spec.alpha :as s]
             [clojure.data :as data]
             [clojure.walk :as walk]
@@ -17,6 +16,7 @@
             [dcs.components.location.is-location :as is-location]
             [dcs.components.location.is-void :as is-void]
             [dcs.components.provides-action :as provides-action]
+            [dcs.ecs :as ecs]
             [dcs.random :as r]
             [orchestra.spec.test :as st]))
 
@@ -28,44 +28,44 @@
   [system new-entity town-name & components]
   (let [system-with-new-town
         (-> system
-            (e/add-entity new-entity)
-            (e/add-component new-entity (has-name/create town-name))
-            (e/add-component new-entity (is-location/create)))]
-    (reduce #(e/add-component %1 new-entity %2) system-with-new-town components)))
+            (ecs/add-entity new-entity)
+            (ecs/add-component new-entity (has-name/create town-name))
+            (ecs/add-component new-entity (is-location/create)))]
+    (reduce #(ecs/add-component %1 new-entity %2) system-with-new-town components)))
 
 (defn- generate-summoner [system rng]
-  (let [void (first (e/get-all-entities-with-component
+  (let [void (first (ecs/get-entities-with-component
                      system
                      is-void/component-type))
-        hometown (->> (e/get-all-entities-with-component
+        hometown (->> (ecs/get-entities-with-component
                        system
                        is-location/component-type)
                       (remove #{void})
                       (r/seeded-rand-item rng))
-        summoner (e/create-entity)]
+        summoner (ecs/create-entity)]
     (-> system
-        (e/add-entity summoner)
-        (e/add-component summoner (has-location/create system hometown))
-        (e/add-component summoner (has-name/create (str "summoner " (next-int))))
-        (e/add-component summoner (is-human/create))
-        (e/add-component summoner (has-inventory/create [] 10))
-        (e/add-component summoner (has-capacity/create []))
-        (e/add-component summoner (has-magic/create-rand-has-magic rng 2 3)))))
+        (ecs/add-entity summoner)
+        (ecs/add-component summoner (has-location/create system hometown))
+        (ecs/add-component summoner (has-name/create (str "summoner " (next-int))))
+        (ecs/add-component summoner (is-human/create))
+        (ecs/add-component summoner (has-inventory/create [] 10))
+        (ecs/add-component summoner (has-capacity/create []))
+        (ecs/add-component summoner (has-magic/create-rand-has-magic rng 2 3)))))
 
 (defn- generate-devil [system]
-  (let [devil (e/create-entity)
-        void (first (e/get-all-entities-with-component
+  (let [devil (ecs/create-entity)
+        void (first (ecs/get-entities-with-component
                      system
                      is-void/component-type))]
     (-> system
-        (e/add-entity devil)
-        (e/add-component devil (has-location/create system void))
-        (e/add-component devil (is-devil/create))
-        (e/add-component devil (has-name/create (str "devil " (next-int))))
-        (e/add-component devil (is-voidborn/create))
-        (e/add-component devil (has-inventory/create [] 50))
-        (e/add-component devil (has-capacity/create []))
-        (e/add-component devil (has-magic/create {})))))
+        (ecs/add-entity devil)
+        (ecs/add-component devil (has-location/create system void))
+        (ecs/add-component devil (is-devil/create))
+        (ecs/add-component devil (has-name/create (str "devil " (next-int))))
+        (ecs/add-component devil (is-voidborn/create))
+        (ecs/add-component devil (has-inventory/create [] 50))
+        (ecs/add-component devil (has-capacity/create []))
+        (ecs/add-component devil (has-magic/create {})))))
 
 (defn- add-travel-action
   "Adds one-way travel link"
@@ -81,10 +81,10 @@
        (provides-action/add-provided-action system entity)))
 
 (defn- build-locations [system rng]
-  (let [void (e/create-entity)
-        berlin (e/create-entity)
-        london (e/create-entity)
-        moscow (e/create-entity)]
+  (let [void (ecs/create-entity)
+        berlin (ecs/create-entity)
+        london (ecs/create-entity)
+        moscow (ecs/create-entity)]
     (-> system
         (generate-town void "THE VOID (spoooooky)" (is-void/create))
         (generate-town berlin "Berlin")
@@ -102,12 +102,12 @@
         (add-train-proficiency-action berlin #{:fire :metal} 100 500))))
 
 (defn- component-map [system entity]
-  (->> (e/get-all-components-on-entity system entity)
+  (->> (ecs/get-components-on-entity system entity)
        (map (fn [c] [(last (clojure.string/split (str (type c)) #"\.")) c]))
        (into {})))
 
 (defn- seed-world [system rng]
-  (let [new-system (-> (e/create-system)
+  (let [new-system (-> (ecs/create-system)
                        (build-locations rng))
         seeded (reduce (fn [sys _]
                          (-> sys
@@ -118,19 +118,19 @@
     (prn "World was seeded.")
     (prn "Locations")
     (clojure.pprint/pprint
-     (for [location (e/get-all-entities-with-component
+     (for [location (ecs/get-entities-with-component
                      seeded
                      is-location/component-type)]
        (component-map seeded location)))
     (prn "Humans")
     (clojure.pprint/pprint
-     (for [human (e/get-all-entities-with-component
+     (for [human (ecs/get-entities-with-component
                   seeded
                   is-human/component-type)]
        (component-map seeded human)))
     (prn "Devils")
     (clojure.pprint/pprint
-     (for [devil (e/get-all-entities-with-component
+     (for [devil (ecs/get-entities-with-component
                   seeded
                   is-devil/component-type)]
        (component-map seeded devil)))
@@ -140,10 +140,10 @@
 ;; we want to group them under a "Actor" or "AI" Component. This is just for
 ;; test purposes.
 (defn- summoners-system [rng system ticks]
-  (let [summoners (e/get-all-entities-with-component
+  (let [summoners (ecs/get-entities-with-component
                    system
                    is-human/component-type)
-        get-component #(e/get-component system %1 %2)]
+        get-component #(ecs/get-component system %1 %2)]
     (reduce (fn [sys summoner]
               (let [location-actions (->> (has-location/get-location sys summoner)
                                           (provides-action/get-actions sys))
@@ -155,7 +155,7 @@
             summoners)))
 
 (defn- devils-system [system ticks]
-  (let [devils (e/get-all-entities-with-component
+  (let [devils (ecs/get-entities-with-component
                 system
                 is-devil/component-type)]
     system))
@@ -196,7 +196,7 @@
   "I don't do a whole lot ... yet."
   [& args]
   (let [rng (r/create-rng 3)
-        sys (-> e/create-system
+        sys (-> ecs/create-system
                 (seed-world rng)
                 (add-systems rng))]
     (-> sys
@@ -207,8 +207,12 @@
         (advance 10)
         (advance 10)
         (advance 10)
-        (advance 1)
-        (advance 25))
+        (advance 10)
+        (advance 10)
+        (advance 10)
+        (advance 10)
+        (advance 10)
+        (advance 10))
     "end"))
 
 (st/instrument)

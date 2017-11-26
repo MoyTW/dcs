@@ -105,6 +105,6 @@
 (defn change-proficiency-xp
   [system entity domain xp-delta]
   (let [updated (update-in (ecs/get-component system entity component-type)
-                           [:proficiencies domain ::xp]
+                           [::proficiencies domain ::xp]
                            (partial + xp-delta))]
     (ecs/add-component system entity updated)))
