@@ -145,8 +145,11 @@
         get-component #(ecs/get-component system %1 %2)]
     (reduce (fn [sys summoner]
               (let [location-actions (->> (has-location/get-location sys summoner)
-                                          (provides-action/get-actions sys))
-                    summoner-actions (provides-action/get-actions sys summoner)
+                                          (provides-action/get-allowed-actions
+                                           sys
+                                           summoner))
+                    summoner-actions (provides-action/get-allowed-actions
+                                      sys summoner summoner)
                     actions (concat location-actions summoner-actions)
                     action (r/seeded-rand-item rng actions)]
                 (provides-action/execute-action sys action summoner)))

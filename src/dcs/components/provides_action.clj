@@ -1,9 +1,40 @@
 (ns dcs.components.provides-action
-  (:require [clojure.spec.alpha :as s]
+  (:require [clojure.set :as cset]
+            [clojure.spec.alpha :as s]
             [dcs.components.actor.has-magic :as has-magic]
             [dcs.components.has-location :as has-location]
             [dcs.components.location.is-location :as is-location]
             [dcs.ecs :as ecs]))
+
+;; REQUIREMENTS
+
+(defn- create-domain-requirement [available-domains]
+  {::requirement-type ::domain
+   ::requires-one available-domains})
+
+(defn- domain-fn [system {:keys [::requires-one] :as requirement} entity]
+  (let [entity-domains (has-magic/get-proficiencies-domains system entity)]
+    (boolean (seq (cset/intersection requires-one entity-domains)))))
+
+(def requirement-types->fns
+  {::domain domain-fn})
+
+(s/def ::requirement-type (set (keys requirement-types->fns)))
+(s/def ::requirement (s/keys :req [::requirement-type]))
+
+;; Really for provides-action, not requirements
+(s/def ::requirements (s/coll-of ::requirement))
+
+(defn- get-requirement-fn-by-type [requirement-type]
+  (get requirement-types->fns requirement-type))
+
+(defn- meets-requirement?
+  [system {:keys [::requirement-type] :as requirement} entity]
+  (let [requirement-fn (get-requirement-fn-by-type requirement-type)]
+    (requirement-fn system requirement entity)))
+
+(defn meets-requirements? [system requirements entity]
+  (every? #(meets-requirement? system % entity) requirements))
 
 ;; COSTS
 
@@ -58,7 +89,7 @@
   {::action-type ::train-proficiency
    ;; TODO: find out what you want 'value' to be baseline'd on
    ::payoff {::intrinsic-value (int (/ (+ min-xp max-xp) 2))}
-   ::requirements []
+   ::requirements [(create-domain-requirement available-domains)]
    ::costs []
    ::available-domains available-domains
    ::min-xp min-xp
@@ -139,8 +170,17 @@
 (s/fdef get-actions
   :args (s/cat :system ::ecs/System :entity ::ecs/Entity)
   :ret (s/or :nil nil? :actions ::actions))
-(defn get-actions [system entity]
+(defn- get-actions [system entity]
   (::actions (ecs/get-component system entity component-type)))
+
+(s/fdef get-allowed-actions
+  :args (s/cat :system ::ecs/System
+               :executor ::ecs/Entity
+               :provider ::ecs/Entity)
+  :ret (s/or :nil nil? :actions ::actions))
+(defn get-allowed-actions [system executor provider]
+  (->> (get-actions system provider)
+       (filter #(meets-requirements? system (::requirements %) executor))))
 
 (s/fdef add-provided-action
   :args (s/cat :system ::ecs/System :entity ::ecs/Entity :action ::action)

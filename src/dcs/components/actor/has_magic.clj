@@ -98,13 +98,23 @@
        create))
 
 (s/fdef change-proficiency-xp
-  :args (s/cat :system map?
-               :entity (fn [_] true)
+  :args (s/cat :system ::ecs/System
+               :entity ::ecs/Entity
                :domain ::domain
-               :xp-delta int?))
+               :xp-delta int?)
+  :ret ::ecs/System)
 (defn change-proficiency-xp
   [system entity domain xp-delta]
   (let [updated (update-in (ecs/get-component system entity component-type)
                            [::proficiencies domain ::xp]
                            (partial + xp-delta))]
     (ecs/add-component system entity updated)))
+
+(s/fdef get-proficiencies-domains
+  :args (s/cat :system ::ecs/System :entity ::ecs/Entity)
+  :ret (s/coll-of ::domain :kind set?))
+(defn get-proficiencies-domains [system entity]
+  (->> (ecs/get-component system entity component-type)
+       ::proficiencies
+       keys
+       (into #{})))
