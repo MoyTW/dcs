@@ -41,6 +41,42 @@
 
 (s/def ::costs any?)
 
+;; GATHERING STUFF
+
+(defn action-fn-spec [action-spec]
+  (s/cat :system ::ecs/System :action action-spec :entity ::ecs/Entity))
+
+(defn- stamp-item [system template-id]
+  (let [new-entity (ecs/create-entity)]
+    (reduce
+     (fn instantiate-component [sys component-template]
+       ;; This function will create and add the component to the system
+       )
+     (ecs/add-entity system new-entity)
+     template)))
+
+(s/def ::loot-chance (s/and int? pos?))
+(s/def ::template-id int?)
+
+;; template-ids will be held in a template dictionary, which will be a Component
+;; As of now, templates will be completely static and loaded at start or
+;; hard-coded, depending on how future-proof I feel later this week
+;;
+;; if I'm not sick, 'cuz I think I may be coming down with a cough
+;; also in the open office of today's startup everyone can hear you cough
+;; it's just the best
+(s/def ::loot-table (s/map-of ::loot-chance ::template-id))
+
+(s/def ::gather-action
+  (s/and
+   ::action
+   (s/keys :req [::loot-table])))
+
+(s/fdef gather-fn :args (action-fn-spec ::gather-action) :ret ::ecs/System)
+(defn gather-fn [system {:keys [::loot-table] :as action} entity]
+  (println "GATHER FN NOT IMPLEMENTED")
+  system)
+
 ;; travel stuff
 
 (s/def ::travel-action
