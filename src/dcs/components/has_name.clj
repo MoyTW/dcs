@@ -15,7 +15,7 @@
    component-type
    ::name name))
 
-(s/fdef get-nane
+(s/fdef get-name
   :args (s/cat :system ::ecs/System :entity ::ecs/Entity)
   :ret ::name)
 (defn get-name [system entity]
