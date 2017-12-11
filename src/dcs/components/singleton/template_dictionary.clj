@@ -20,11 +20,15 @@
 
 (def ^:private component-type ::TemplateDictionary)
 
+(defn throw-no-non-void-locations! []
+  (throw (Exception. (str "Could not stamp ::HasLocationNonVoid;"
+                          " there are no non-void locations!"))))
+
 (defn has-location-non-void [system rng]
-  (->> (ecs/get-entities-with-component system is-location/component-type)
-       (remove #(ecs/get-component system % is-void/component-type))
-       (r/seeded-rand-item rng)
-       (has-location/create system)))
+  (if-let [locations (seq (is-location/get-non-void-locations system))]
+    (->> (r/seeded-rand-item rng)
+         (has-location/create system))
+    (throw-no-non-void-locations!)))
 
 (defn has-magic-human-summoner [_ rng]
   (has-magic/create-rand-has-magic rng 2 3))
@@ -76,18 +80,19 @@
         (ecs/add-entity new-entity)
         (ecs/add-component new-entity (create)))))
 
+(defn throw-invalid-entity-keyword! [entity-keyword]
+  (throw (IllegalArgumentException.
+          (format "Could not stamp %1$s; %1$s was not a valid entity-keyword!"
+                  entity-keyword)))  )
+
 (s/fdef stamp
   :args (s/cat :system ::ecs/System :rng any? :entity-keyword keyword?)
-  :ret ::ecs/System
-  :fn (fn entity-keyword-valid?
-        [{{:keys [entity-keyword]} :ret {:keys [system]} :args}]
-        (-> (ecs/get-singleton-component system component-type)
-            ::entity-keywords->templates
-            (contains? entity-keyword))))
+  :ret ::ecs/System)
 (defn stamp [system rng entity-keyword]
   (let [dictionary (ecs/get-singleton-component system component-type)
         template (entity-keyword (::entity-keywords->templates dictionary))
         new-entity (ecs/create-entity)]
+    (when (nil? template) (throw-invalid-entity-keyword! entity-keyword))
     (reduce (fn [sys component-keyword]
               (let [f (-> (::component-keywords->templates dictionary)
                           (get component-keyword))]
