@@ -3,6 +3,7 @@
             [dcs.components.actor.has-magic :as has-magic]
             [dcs.components.has-location :as has-location]
             [dcs.components.location.is-location :as is-location]
+            [dcs.components.singleton.template-dictionary :as template-dict]
             [dcs.ecs :as ecs]))
 
 ;; REQUIREMENTS
@@ -46,36 +47,38 @@
 (defn action-fn-spec [action-spec]
   (s/cat :system ::ecs/System :action action-spec :entity ::ecs/Entity))
 
-(defn- stamp-item [system template-id]
-  (let [new-entity (ecs/create-entity)]
-    (reduce
-     (fn instantiate-component [sys component-template]
-       ;; This function will create and add the component to the system
-       )
-     (ecs/add-entity system new-entity)
-     template)))
-
 (s/def ::loot-chance (s/and int? pos?))
-(s/def ::template-id int?)
+(s/def ::template-keyword keyword?)
 
-;; template-ids will be held in a template dictionary, which will be a Component
-;; As of now, templates will be completely static and loaded at start or
-;; hard-coded, depending on how future-proof I feel later this week
-;;
-;; if I'm not sick, 'cuz I think I may be coming down with a cough
-;; also in the open office of today's startup everyone can hear you cough
-;; it's just the best
-(s/def ::loot-table (s/map-of ::loot-chance ::template-id))
+(s/def ::loot-table (s/coll-of (s/tuple ::loot-chance (s/coll-of ::template-keyword))))
 
 (s/def ::gather-action
   (s/and
    ::action
    (s/keys :req [::loot-table])))
 
+(s/fdef create-gather-action :ret ::gather-action)
+(defn create-gather-action [loot-table]
+  {::action-type ::gather-action
+   ::payoff {::intrinsic-value 0}
+   ::requirements []
+   ::costs []
+   ::loot-table loot-table})
+
+#_(create-gather-action [[1 []] [1 [::Summoner]]])
+
+(defn- roll-table [rng table]
+  (throw (UnsupportedOperationException.)))
+
+;; TODO: Push RNG into system /w saved seed!
+(defn- get-rng [system]
+  (throw (UnsupportedOperationException.)))
+
 (s/fdef gather-fn :args (action-fn-spec ::gather-action) :ret ::ecs/System)
 (defn gather-fn [system {:keys [::loot-table] :as action} entity]
-  (println "GATHER FN NOT IMPLEMENTED")
-  system)
+  (let [rng (get-rng system)
+        selection (roll-table loot-table)]
+    (reduce #(template-dict/stamp %1 rng %2) system selection)))
 
 ;; travel stuff
 
