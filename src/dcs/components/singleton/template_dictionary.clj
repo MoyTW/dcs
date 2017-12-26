@@ -68,7 +68,7 @@
           (every? #(contains? component-keywords->templates %))))))
 
 (s/fdef create :ret ::TemplateDictionaryComponent)
-(defn create- []
+(defn- create []
   (ecs/create-component
    component-type
    ::component-keywords->templates fixed-component-keywords->templates
