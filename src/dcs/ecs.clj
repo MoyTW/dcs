@@ -91,6 +91,10 @@
        (get-components-on-entity system)
        first))
 
+(defn overwrite-singleton-component [system component-type component]
+  (let [entity (first (get-entities-with-component system component-type))]
+    (add-component system entity component)))
+
 ;; #############################################################################
 ;; # Brute System Wrappers                                                     #
 ;; #############################################################################
