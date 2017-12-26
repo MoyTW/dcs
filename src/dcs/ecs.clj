@@ -78,18 +78,18 @@
 (defn get-entities-with-component [system component-type]
   (e/get-all-entities-with-component system component-type))
 
-(defn get-singleton-component [system component-type]
-  (->> (get-entities-with-component system component-type)
-       first
-       (get-components-on-entity system)
-       first))
-
 (s/fdef get-components-on-entity
   :args (s/cat :system ::System
                :entity ::Entity)
   :ret (s/coll-of ::Component))
 (defn get-components-on-entity [system entity]
   (e/get-all-components-on-entity system entity))
+
+(defn get-singleton-component [system component-type]
+  (->> (get-entities-with-component system component-type)
+       first
+       (get-components-on-entity system)
+       first))
 
 ;; #############################################################################
 ;; # Brute System Wrappers                                                     #
